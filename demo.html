@@ -1,0 +1,93 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+
+	<title>Demo of Textbox Revision Tracker</title>
+	<meta name="description" content="A demo of the Textbox Revision Tracker, a jquery plugin that tracks text revision to an HTML input or textbox">
+	<meta name="author" content="Jon Bake">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <style>
+  	.diff-ins {
+      	background-color: #eaffea;
+      }
+      .diff-del {
+      	background-color: #f8cbcb;
+      }
+  </style>
+</head>
+
+<body>
+	<div class="container">
+		<h1>Textbox Revision Tracker</h1>
+		<div class="form-group">
+			<label for"ta">Text</label>
+			<textarea class="form-control" id="ta"></textarea>
+		</div>
+		<button class="btn btn-primary" id="saveRevision">Save</button>
+		<button class="btn" id="undo">Undo</button>
+		<button class="btn" id="redo">Redo</button>
+		<h2>Revision History</h2>
+		<table class="table">
+			<thead>
+				<th>Revision Number</th>
+				<th>Time of Revision</th>
+				<th>Diff from Previous Version</th>
+				<th>Revert to revision?</th>
+			</thead>
+			<tbody id="revs">
+			</tbody>
+		</table>
+	</div>
+
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script src="src/textbox-revision-tracker.js"></script>
+	<script src="libs/diff.js"></script>
+	<script>
+		var $ta = $('textarea#ta');
+		//convenience so we don't have to keep typing '$('textarea#ta').revisionTracker(...)'
+		var rt = $ta.revisionTracker.bind($ta);
+		//initialize revision tracker on textarea
+		rt({diffFunction: window.diffString}).focus();
+		/**
+		 * Update the UI with the revision data.. not ideal, but hey it's a demo.
+		 * @return {undefined}
+		 */
+		var updateRevsDisplay = function () {
+			var $r = $('#revs');
+			$r.empty();
+			rt('revisions').reverse().forEach(function (rev) {
+				var $tr = $('<tr/>');
+				$tr.append($('<td/>').text(rev.revisionNumber));
+				$tr.append($('<td/>').text(new Date(rev.time).toLocaleTimeString()));
+				$tr.append($('<td></td').html(rt('getDiff', rev.revisionNumber - 1, rev.revisionNumber)));
+				var $btn = $('<td><button class="btn btn-xs">Revert to Here</button></td>').on('click', function () {
+					rt('goToRevision', rev.revisionNumber);
+					updateRevsDisplay();
+				});
+				$tr.append($btn);
+				$r.append($tr);
+			});
+		};
+		//add on click handlers for buttons
+		$('#saveRevision').on('click', function () {
+			rt('save');
+			$('#ta').focus();
+			updateRevsDisplay();
+		});
+		$('#undo').on('click', function () {
+			rt('undo');
+			updateRevsDisplay();
+		});
+		$('#redo').on('click', function () {
+			rt('redo');
+			updateRevsDisplay();
+		});
+	</script>
+</body>
+</html>

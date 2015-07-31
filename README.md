@@ -2,7 +2,7 @@
 
 A simple jQuery plugin to track text revisions to HTML inputs or text areas.
 
-[Demo](http://jonmbake.github.io/textbox-revision-tracker/demo.html)
+## [Demo](http://jonmbake.github.io/textbox-revision-tracker/demo.html)
 
 ## Getting Started
 Download the [production version][min] or the [development version][max].

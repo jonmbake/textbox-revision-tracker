@@ -1,6 +1,6 @@
 # Textbox Revision Tracker
 
-A simple jQuery plugin to track text revisions to HTML inputs or text areas.
+A simple jQuery plugin to track text revisions to HTML inputs or text areas.  Revisions can be saved, undone, redone, diffed and fetched.  Revision data of text, time of revision and revision number are stored.
 
 ## [Demo](http://jonmbake.github.io/textbox-revision-tracker/demo.html)
 

@@ -1,16 +1,26 @@
 /*
- * textbox-revision-tracker
- * https://github.com/jonmbake/jquery-textbox-revision-tracker
+ * ~textbox-revision-tracker~
  *
- * Valid Options:
- * autoSave (integer) - will automatically create a revision after X seconds of paused typing
- * diffFunction (function) - function to call when  performing a diff through the API
+ * A jQuery plugin to track text revisions to HTML inputs or text areas. Revisions can be saved, undone, redone,
+ * diffed and fetched. Revision data of text, time of revision and revision number are stored.
+ *
+ * Source: https://github.com/jonmbake/jquery-textbox-revision-tracker
+ * Demo: http://jonmbake.github.io/textbox-revision-tracker/demo.html
+ *
  *
  * Copyright (c) 2015 Jon Bake
  * Licensed under the MIT license.
  */
 (function($) {
-  //
+  /**
+   * Revision Tracker Base Class.
+   * @constructor
+   * @param {[type]} $el     jqeury element to attach revision tracker to
+   * @param {[type]} options options -
+   * Valid Options are:
+   *   autoSave (integer) - will automatically create a revision after X seconds of paused typing
+   *   diffFunction (function) - function to call when  performing a diff through the API
+   */
   var RevisionTracker = function ($el, options) {
     options = options || {};
 
@@ -31,17 +41,28 @@
   /**
    * Saves a revision if predicate passes truth test.
    *
-   * @param  {Boolean} predicate - add to 
-   * @return {[type]}           [description]
+   * @param  {Boolean} predicate - only save if predicate evaluates to true (or is undefined)
+   * @return {Object} Revison with property of text and time
    */
   RevisionTracker.prototype.saveRevision = function (predicate) {
     if (predicate === void 0 || predicate === true) {
       this.revisions.push({text: this.$el.val(), time: Date.now()});
     }
   };
+  /**
+   * Get last revision made.
+   * @return {Object} Revison with property of text and time
+   */
   RevisionTracker.prototype.lastRevision = function () {
     return this.revisions[this.revisions.length - 1];
   };
+  /**
+   * Pop a revision from revisions to undone revisions (or vice versa if reverse is true).
+   *
+   * @param  {boolean} reverse if true pop from undone revisions to revisions
+   * @param  {number} popTo   pop to a specific revisions
+   * @return {Object} poped revison
+   */
   RevisionTracker.prototype.popRevision = function (reverse, popTo) {
     var popped,
       fromArray = reverse ? this.undoneRevisions : this.revisions;
@@ -62,13 +83,20 @@
     return popped;
   };
   /**
-   * Get
-   * @param  {[type]} revisionNumber [description]
-   * @return {[type]}                [description]
+   * Get a particular revision.
+   *
+   * @param  {number} revisionNumber number of revision to get
+   * @return {Object} Revison with property of text and time
    */
   RevisionTracker.prototype.getRevision = function (revisionNumber) {
     return this.revisions[parseInt(revisionNumber, 10) - 1];
   };
+  /**
+   * Go to a revision number.
+   *
+   * @param  {number} revisionNumber revision number to make active
+   * @return {Object} newly active revision
+   */
   RevisionTracker.prototype.goToRevision = function (revisionNumber) {
     revisionNumber = parseInt(revisionNumber, 10);
     if (revisionNumber < 0 || revisionNumber > this.revisions.length) {
@@ -76,15 +104,29 @@
     }
     return this.popRevision(false, revisionNumber);
   };
-
+  /**
+   * Undo the last revision.
+   *
+   * @return {object} undone revision
+   */
   RevisionTracker.prototype.undo = function () {
     return this.popRevision();
   };
-
+  /**
+   * Redo a revision.
+   *
+   * @return {object} revision that was re-applied
+   */
   RevisionTracker.prototype.redo = function () {
     return this.popRevision(true);
   };
-
+  /**
+   * Diff two revisions.
+   *
+   * @param  {number} firstRevNumber  first revision
+   * @param  {number} secondRevNumber second revision
+   * @return {string}                 diff of first and second revision
+   */
   RevisionTracker.prototype.diff = function (firstRevNumber, secondRevNumber) {
     if (!this.diffFunction) {
       throw new Error('In order to use RevisionTracker#diff, a diffFunction must be supplied as an option');
@@ -149,6 +191,9 @@
       }
       return getData(this).saveRevision();
     },
+    /**
+     * @see {@link RevisionTracker.prototype.getRevision}
+     */
     getRevision: function (revisionNumber) {
       return getData(this).getRevision(revisionNumber);
     },

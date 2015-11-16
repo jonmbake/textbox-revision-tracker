@@ -1,4 +1,4 @@
-/*! Textbox Revision Tracker - v0.1.0 - 2015-10-19
+/*! Textbox Revision Tracker - v0.1.0 - 2015-11-15
 * https://github.com/jonmbake/textbox-revision-tracker
 * Copyright (c) 2015 Jon Bake; Licensed MIT */
 (function($) {
@@ -28,105 +28,107 @@
       }.bind(this));
     }
   };
-  /**
-   * Saves a revision if predicate passes truth test.
-   *
-   * @param  {Boolean} predicate - only save if predicate evaluates to true (or is undefined)
-   * @return {Object} Revison with property of text and time
-   */
-  RevisionTracker.prototype.saveRevision = function (predicate) {
-    if (predicate === void 0 || predicate === true) {
-      this.revisions.push({text: this.$el.val(), time: Date.now()});
+  $.extend(RevisionTracker.prototype, {
+    /**
+     * Saves a revision if predicate passes truth test.
+     *
+     * @param  {Boolean} predicate - only save if predicate evaluates to true (or is undefined)
+     * @return {Object} Revison with property of text and time
+     */
+    saveRevision: function (predicate) {
+      if (predicate === void 0 || predicate === true) {
+        this.revisions.push({text: this.$el.val(), time: Date.now()});
+      }
+    },
+    /**
+     * Get last revision made.
+     * @return {Object} Revison with property of text and time
+     */
+    lastRevision: function () {
+      return this.revisions[this.revisions.length - 1];
+    },
+    /**
+     * Pop a revision from revisions to undone revisions (or vice versa if reverse is true).
+     *
+     * @param  {boolean} reverse if true pop from undone revisions to revisions
+     * @param  {number} popTo   pop to a specific revisions
+     * @return {Object} poped revison
+     */
+    popRevision: function (reverse, popTo) {
+      var popped,
+        fromArray = reverse ? this.undoneRevisions : this.revisions;
+      if (fromArray.length === 0) {
+        return;
+      }
+      if (popTo) {
+        popped = fromArray.splice(popTo)[0];
+      } else {
+        popped = fromArray.pop();
+      }
+      (reverse ? this.revisions : this.undoneRevisions).push(popped);
+      if (this.revisions.length > 0) {
+        this.$el.val(this.lastRevision().text);
+      } else {
+        this.$el.val('');
+      }
+      return popped;
+    },
+    /**
+     * Get a particular revision.
+     *
+     * @param  {number} revisionNumber number of revision to get
+     * @return {Object} Revison with property of text and time
+     */
+    getRevision: function (revisionNumber) {
+      return this.revisions[parseInt(revisionNumber, 10) - 1];
+    },
+    /**
+     * Go to a revision number.
+     *
+     * @param  {number} revisionNumber revision number to make active
+     * @return {Object} newly active revision
+     */
+    goToRevision: function (revisionNumber) {
+      revisionNumber = parseInt(revisionNumber, 10);
+      if (revisionNumber < 0 || revisionNumber > this.revisions.length) {
+        throw new Error('Attempting to go to an invalid revision number');
+      }
+      return this.popRevision(false, revisionNumber);
+    },
+    /**
+     * Undo the last revision.
+     *
+     * @return {object} undone revision
+     */
+    undo: function () {
+      return this.popRevision();
+    },
+    /**
+     * Redo a revision.
+     *
+     * @return {object} revision that was re-applied
+     */
+    redo: function () {
+      return this.popRevision(true);
+    },
+    /**
+     * Diff two revisions.
+     *
+     * @param  {number} firstRevNumber  first revision
+     * @param  {number} secondRevNumber second revision
+     * @return {string}                 diff of first and second revision
+     */
+    diff: function (firstRevNumber, secondRevNumber) {
+      if (!this.diffFunction) {
+        throw new Error('In order to use RevisionTracker#diff, a diffFunction must be supplied as an option');
+      }
+      var first = this.getRevision(firstRevNumber) || {text: ''},
+        second = this.getRevision(secondRevNumber);
+      if (second) {
+        return this.diffFunction(first.text, second.text);
+      }
     }
-  };
-  /**
-   * Get last revision made.
-   * @return {Object} Revison with property of text and time
-   */
-  RevisionTracker.prototype.lastRevision = function () {
-    return this.revisions[this.revisions.length - 1];
-  };
-  /**
-   * Pop a revision from revisions to undone revisions (or vice versa if reverse is true).
-   *
-   * @param  {boolean} reverse if true pop from undone revisions to revisions
-   * @param  {number} popTo   pop to a specific revisions
-   * @return {Object} poped revison
-   */
-  RevisionTracker.prototype.popRevision = function (reverse, popTo) {
-    var popped,
-      fromArray = reverse ? this.undoneRevisions : this.revisions;
-    if (fromArray.length === 0) {
-      return;
-    }
-    if (popTo) {
-      popped = fromArray.splice(popTo)[0];
-    } else {
-      popped = fromArray.pop();
-    }
-    (reverse ? this.revisions : this.undoneRevisions).push(popped);
-    if (this.revisions.length > 0) {
-      this.$el.val(this.lastRevision().text);
-    } else {
-      this.$el.val('');
-    }
-    return popped;
-  };
-  /**
-   * Get a particular revision.
-   *
-   * @param  {number} revisionNumber number of revision to get
-   * @return {Object} Revison with property of text and time
-   */
-  RevisionTracker.prototype.getRevision = function (revisionNumber) {
-    return this.revisions[parseInt(revisionNumber, 10) - 1];
-  };
-  /**
-   * Go to a revision number.
-   *
-   * @param  {number} revisionNumber revision number to make active
-   * @return {Object} newly active revision
-   */
-  RevisionTracker.prototype.goToRevision = function (revisionNumber) {
-    revisionNumber = parseInt(revisionNumber, 10);
-    if (revisionNumber < 0 || revisionNumber > this.revisions.length) {
-      throw new Error('Attempting to go to an invalid revision number');
-    }
-    return this.popRevision(false, revisionNumber);
-  };
-  /**
-   * Undo the last revision.
-   *
-   * @return {object} undone revision
-   */
-  RevisionTracker.prototype.undo = function () {
-    return this.popRevision();
-  };
-  /**
-   * Redo a revision.
-   *
-   * @return {object} revision that was re-applied
-   */
-  RevisionTracker.prototype.redo = function () {
-    return this.popRevision(true);
-  };
-  /**
-   * Diff two revisions.
-   *
-   * @param  {number} firstRevNumber  first revision
-   * @param  {number} secondRevNumber second revision
-   * @return {string}                 diff of first and second revision
-   */
-  RevisionTracker.prototype.diff = function (firstRevNumber, secondRevNumber) {
-    if (!this.diffFunction) {
-      throw new Error('In order to use RevisionTracker#diff, a diffFunction must be supplied as an option');
-    }
-    var first = this.getRevision(firstRevNumber) || {text: ''},
-      second = this.getRevision(secondRevNumber);
-    if (second) {
-      return this.diffFunction(first.text, second.text);
-    }
-  };
+  });
   /**
    * Returns revision track data for element.
    *
